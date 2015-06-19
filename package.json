@@ -1,0 +1,23 @@
+{
+  "name": "vnmark",
+  "version": "1.0.0",
+  "description": "An API to add diacritics to vietnamese",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:vunb/vnmark.git"
+  },
+  "keywords": [
+    "diacritics",
+    "vietnamese"
+  ],
+  "author": "Vunb <vunb@bkindex.com> (http://vndemy.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vunb/vnmark/issues"
+  },
+  "homepage": "https://github.com/vunb/vnmark"
+}
