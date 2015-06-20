@@ -1,144 +1,79 @@
-/**
- * Vnmark
- * https://github.com/vunb/vnmark
- *
- * Copyright (c) 2015 Vunb
- * Licensed under the MIT license.
- */
+// Module: FileLineReader
+// Constructor: FileLineReader(filename, bufferSize = 8192)
+// Methods: hasNextLine() -> boolean
+//          nextLine() -> String
+//
+//
+var fs = require("fs");
+var sys = require("sys");
 
-var fs = require('fs')
-    ;
+module.exports = function(filename, bufferSize) {
 
-
-var chars = {
-    'á': 'a',
-    'à': 'a',
-    'ả': 'a',
-    'ã': 'a',
-    'ạ': 'a',
-
-    'â': 'a',
-    'ấ': 'a',
-    'ầ': 'a',
-    'ẩ': 'a',
-    'ẫ': 'a',
-    'ậ': 'a',
-
-    'ă': 'a',
-    'ắ': 'a',
-    'ằ': 'a',
-    'ẳ': 'a',
-    'ẵ': 'a',
-    'ặ': 'a',
-
-    'é': 'e',
-    'è': 'e',
-    'ẻ': 'e',
-    'ẽ': 'e',
-    'ẹ': 'e',
-
-    'ê': 'e',
-    'ế': 'e',
-    'ề': 'e',
-    'ể': 'e',
-    'ễ': 'e',
-    'ệ': 'e',
-
-    'ó': 'o',
-    'ò': 'o',
-    'ỏ': 'o',
-    'õ': 'o',
-    'ọ': 'o',
-
-    'ô': 'o',
-    'ồ': 'o',
-    'ố': 'o',
-    'ổ': 'o',
-    'ỗ': 'o',
-    'ộ': 'o',
-
-    'ơ': 'o',
-    'ớ': 'o',
-    'ờ': 'o',
-    'ở': 'o',
-    'ỡ': 'o',
-    'ợ': 'o',
-
-    'í': 'i',
-    'ì': 'i',
-    'ỉ': 'i',
-    'ĩ': 'i',
-    'ị': 'i',
-
-    'ú': 'u',
-    'ù': 'u',
-    'ủ': 'u',
-    'ũ': 'u',
-    'ụ': 'u',
-
-    'ư': 'u',
-    'ứ': 'u',
-    'ừ': 'u',
-    'ử': 'u',
-    'ữ': 'u',
-    'ự': 'u',
-
-    'đ': 'd',
-
-    'ý': 'y',
-    'ỳ': 'y',
-    'ỷ': 'y',
-    'ỹ': 'y',
-    'ỵ': 'y'
-};
-
-module.exports = {
-    /**
-     * Add diacritics to text
-     * @param {string} text
-     * @returns {string}
-     */
-    addMark: function (text) {
-        if (!text) return '';
-
-        var values = Object.keys(chars).map(function (key) {
-            return chars[key];
-        });
-        var regex = new RegExp('(' + values.join('|') + ')', 'g');
-
-        return String(text).replace(regex, function (match) {
-            for (var key in chars) {
-                if (chars.hasOwnProperty(key) && chars[key] === match) {
-                    return key;
-                }
-            }
-        });
-    },
-
-    /**
-     * Remove all diacritics of input
-     * @param text
-     * @returns {string}
-     */
-    removeMark: function (text) {
-        if (!text) return '';
-
-        var regex = new RegExp('(' + Object.keys(chars).join('|') + ')');
-        return String(text).replace(regex, function (match) {
-            return chars[match];
-        })
-    },
-
-    /**
-     * Load database
-     */
-    loadDb: function () {
-
-        var data = fs.readFileSync("db/map.txt", "utf16");
-
-        
-
+    if(!bufferSize) {
+        bufferSize = 8192;
     }
 
+    //private:
+    var currentPositionInFile = 0;
+    var buffer = "";
+    var fd = fs.openSync(filename, "r");
 
+
+    // return -1
+    // when EOF reached
+    // fills buffer with next 8192 or less bytes
+    var fillBuffer = function(position) {
+
+        var res = fs.readSync(fd, bufferSize, position, "utf8");
+
+        buffer += res[0];
+        if (res[1] == 0) {
+            return -1;
+        }
+        return position + res[1];
+
+    };
+
+    currentPositionInFile = fillBuffer(0);
+
+    //public:
+    this.hasNextLine = function() {
+        while (buffer.indexOf("\n") == -1 && currentPositionInFile != -1) {
+            currentPositionInFile = fillBuffer(currentPositionInFile);
+            if (currentPositionInFile == -1) {
+                break;
+            }
+        }
+
+        if (buffer.indexOf("\n") > -1 || buffer.length > 0) {
+
+            return true;
+        }
+        return false;
+    };
+
+    //public:
+    this.bufferSize = function(){
+        return buffer.length
+    };
+    
+    //public:
+    this.nextLine = function() {
+        var lineEnd = buffer.indexOf("\n");
+        if(lineEnd == -1){
+            lineEnd = buffer.length;
+        }
+
+        var result = buffer.substring(0, lineEnd);
+
+        buffer = buffer.substring(result.length + 1, buffer.length);
+        return result;
+    };
+
+    //public
+    this.close = function() {
+        fs.closeSync(fd);
+    };
+
+    return this;
 };
