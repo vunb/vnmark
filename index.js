@@ -166,6 +166,7 @@ module.exports = function () {
             }
         }
 
+        //console.log(this.mapProbability["notHas"]);
         reader.close();
     };
 
@@ -184,12 +185,14 @@ module.exports = function () {
 
     this.$getPositionInArr = function (e, arr) {
         arr = arr || [];
-        arr.forEach(function (element, index, arr) {
-            if (e == element) {
-                return index;
-            }
+        var eps = 0.000000001; //for instance
+        var pos = -1;
+        arr.some(function (element, index, arr) {
+            var diff = Math.abs(e - element);
+            pos = index;
+            return diff < eps;
         });
-        return -1;
+        return pos;
     };
 
     this.$moveArr = function (arr1, arr2) {
@@ -204,56 +207,65 @@ module.exports = function () {
     };
 
     this.mark = function (str) {
-        if(!str) return '';
+        if (!str) return '';
 
         var pNotHas = this.mapProbability['notHas'];
-        var s = "", p1 = [], p2= [], track = [,];
+        var s = "", p1 = [], p2 = [], track = [[]];
 
         var regex = /[ ]+/i;
         var word = str.split(regex);
         var wordResult = str.toLowerCase().split(regex);
 
-        if(!this.mapDict[wordResult[0]]) {
+        if (!this.mapDict[wordResult[0]]) {
             this.mapDict[wordResult[0]] = wordResult[0].split(/\s+/);
         }
 
         var tmpPrev = this.mapDict[wordResult[0]];
 
-        for (var i = 0; i < wordResult.length; i ++) {
-            if(!this.mapDict[wordResult[i]]) {
+        for (var i = 1; i < wordResult.length; i++) {
+            if (!this.mapDict[wordResult[i]]) {
                 this.mapDict[wordResult[i]] = wordResult[0].split(/\s+/);
             }
 
             var tmp = this.mapDict[wordResult[i]];
-            for(var j = 0; j < tmp.length; j ++) {
+            for (var j = 0; j < tmp.length; j++) {
                 var ptemp = [];
-                for(var k = 0; k < tmpPrev.length; k++) {
+                for (var k = 0; k < tmpPrev.length; k++) {
                     var st = tmpPrev[k] + " " + tmp[j];
-                    p1[k] = this.mapProbability[st] || pNotHas;
+                    var pst = this.mapProbability[st] || pNotHas;
+                    p1[k] = p1[k] || 0;
+                    p1[k] += parseFloat(pst);
+                    ptemp[k] = p1[k];
                 }
-                p2[j] = this.$min(p1);
-                var pos = this.$getPositionInArr(p2[j], p1);
-                track[i, j] = (i * 10 + pos);
+                var min = this.$min(p1);
+                var pos = this.$getPositionInArr(p2[j], ptemp);
+
+                console.log("length: " + ptemp.length + ", out: " + pos + ", min:" + min);
+                p2[j] = min;
+                track[i - 1] = pos;
             }
 
             this.$moveArr(p1, p2);
             tmpPrev = tmp;
         }
 
-        var pos = this.$getPositionInArr(p2[j], p1);
-        for(var i = wordResult.length - 1; i >= 0; i--) {
+        //var pos = this.$getPositionInArr(p2[j], p1);
+        for (var i = wordResult.length - 1; i >= 0; i--) {
+            var pos = track[i];
             var tmp = this.mapDict[wordResult[i]];
             wordResult[i] = tmp[pos];
-            pos = track[i,pos] % 10;
+            console.log(pos + ":" + tmp[pos]);
         }
 
-        for(var i = 0; i < wordResult.length; i ++) {
+        for (var i = 0; i < wordResult.length; i++) {
             var singleWord = wordResult[i];
-            if(this.$removeMark(singleWord) == word[i]) {
+            var stripWord = this.$removeMark(singleWord);
+
+            if (stripWord == word[i]) {
                 var tmpSingleWord = "";
-                for(var j = 0; j < singleWord.length; j++) {
+                for (var j = 0; j < singleWord.length; j++) {
                     var ch = singleWord.charAt(j);
-                    if(word[i].charAt(j) > '@' && word[i].charAt(j) < '[') {
+                    if (word[i].charAt(j) > '@' && word[i].charAt(j) < '[') {
                         ch = ch.toUpperCase();
                     }
                     tmpSingleWord = singleWord + ch;
@@ -273,7 +285,7 @@ module.exports = function () {
         var tokens = sentence.split(delim);
 
 
-        for(var token in tokens) {
+        for (var token in tokens) {
 
         }
 
